@@ -78,3 +78,10 @@ train_labels_np = to_categorical(train_labels_np, num_classes=38)
 
 #modelin eğitilmesi
 result = model.fit(resized_train_images_np, train_labels_np, batch_size=64, epochs=15, verbose=1 , callbacks=[checkpoint,earlystop])
+
+
+print('accuracy: ' ,result.history['accuracy'][-1]) 
+#accuracy: 0.9271
+
+print('loss: ', result.history['loss'][-1])
+#loss: 0.2238
