@@ -85,3 +85,50 @@ print('accuracy: ' ,result.history['accuracy'][-1])
 
 print('loss: ', result.history['loss'][-1])
 #loss: 0.2238
+
+train_loss = result.history['loss']
+train_accuracy = result.history['accuracy']
+
+
+
+# train loss ve train accuracy görselleştirilmesi
+epochs = range(1, len(train_loss) + 1)
+
+plt.plot(epochs, train_loss, 'b', label='Training loss')
+plt.plot(epochs, train_accuracy, 'r', label='Training accuracy')
+plt.title('Training Loss and Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Loss / Accuracy')
+plt.legend()
+
+plt.show()
+
+test_loss, test_accuracy = model.evaluate(test_data, steps=len(test_data))
+print(f"Test Loss: {test_loss}")
+print(f"Test Accuracy: {test_accuracy}")
+
+#model ile tahmin (test verileriyle)
+predictions = model.predict(test_data)
+
+# test verileri ve tahmin edilen değerler arasındaki karşılaştırma
+num_samples_to_visualize = 10
+test_labels = []  # Gerçek değerleri tutan boş liste
+predicted_labels = []  # Tahmin edilen değerleri tutan boş liste
+
+# Test verilerinden örnekleri al
+for i, (_, labels) in enumerate(test_data):
+    test_labels.extend(labels.argmax(axis=1))  # Gerçek etiketleri al
+    predicted_labels.extend(predictions.argmax(axis=1))  # Tahmin edilen etiketleri al
+    if i == num_samples_to_visualize - 1:
+        break
+
+# Sonuçları görselleştir
+plt.figure(figsize=(12, 8))
+for i in range(num_samples_to_visualize):
+    plt.subplot(5, 2, i + 1)
+    plt.imshow(test_data[i][0][0])  # Test resmini göster
+    plt.title(f'Real: {test_labels[i]}, Predicted: {predicted_labels[i]}')
+    plt.axis('off')
+
+plt.tight_layout()
+plt.show()
