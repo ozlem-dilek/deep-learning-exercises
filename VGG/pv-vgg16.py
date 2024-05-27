@@ -81,10 +81,7 @@ result = model.fit(resized_train_images_np, train_labels_np, batch_size=64, epoc
 
 
 print('accuracy: ' ,result.history['accuracy'][-1]) 
-#accuracy: 0.9271
-
 print('loss: ', result.history['loss'][-1])
-#loss: 0.2238
 
 train_loss = result.history['loss']
 train_accuracy = result.history['accuracy']
