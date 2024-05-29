@@ -2,7 +2,6 @@ from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, Input
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import ModelCheckpoint, EarlyStopping
-from keras.regularizers import l2
 
 from google.colab import drive
 drive.mount('/content/drive')
