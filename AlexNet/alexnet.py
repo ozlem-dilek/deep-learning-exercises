@@ -1,41 +1,48 @@
 from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, Input
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import ModelCheckpoint, EarlyStopping
+from keras.regularizers import l2
+
+from google.colab import drive
+drive.mount('/content/drive')
 
 model = Sequential()
 
-# 1. katman
-model.add(Conv2D(96, kernel_size=(11, 11), strides=(4, 4), activation='relu', input_shape=(224, 224, 3)))
+model.add(Input(shape=(224, 224, 3)))
+
+model.add(Conv2D(64, kernel_size=(11, 11), strides=(4, 4), activation='relu', padding='same'))
 model.add(MaxPooling2D(pool_size=(3, 3), strides=(2, 2)))
 
-# 2. katman
-model.add(Conv2D(256, kernel_size=(5, 5), activation='relu'))
+model.add(Conv2D(192, kernel_size=(5, 5), strides=(1, 1), activation='relu', padding='same'))
 model.add(MaxPooling2D(pool_size=(3, 3), strides=(2, 2)))
 
-# 3. katman
-model.add(Conv2D(384, kernel_size=(3, 3), activation='relu'))
-
-# 4. katman
-model.add(Conv2D(384, kernel_size=(3, 3), activation='relu'))
-
-# 5. katman
-model.add(Conv2D(256, kernel_size=(3, 3), activation='relu'))
+model.add(Conv2D(384, kernel_size=(3, 3), strides=(1, 1), activation='relu', padding='same'))
 model.add(MaxPooling2D(pool_size=(3, 3), strides=(2, 2)))
 
-# Tam bağlantı katmanları
+model.add(Conv2D(256, kernel_size=(3, 3), strides=(1, 1), activation='relu', padding='same'))
+model.add(MaxPooling2D(pool_size=(3, 3), strides=(2, 2)))
+
+model.add(Conv2D(128, kernel_size=(3, 3), strides=(1, 1), activation='relu', padding='same'))
+model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+
 model.add(Flatten())
+
 model.add(Dense(4096, activation='relu'))
 model.add(Dropout(0.5))
 model.add(Dense(4096, activation='relu'))
 model.add(Dropout(0.5))
 model.add(Dense(4, activation='softmax'))
 
-train_path = ''
-test_path = ''
+model.summary()
+
+train_path = '/content/drive/MyDrive/muhendislik-tasarimi/dataset_yeni2/dataset/train'
+test_path = '/content/drive/MyDrive/muhendislik-tasarimi/dataset_yeni2/dataset/test'
+val_path = '/content/drive/MyDrive/muhendislik-tasarimi/dataset_yeni2/dataset/val'
 
 train_data_gen = ImageDataGenerator(rescale=1/255) # Ölçeklendirme
 test_data_gen = ImageDataGenerator(rescale=1/255)
+val_data_gen = ImageDataGenerator(rescale=1/255)
 
 train_generator = train_data_gen.flow_from_directory(
         train_path,
@@ -50,8 +57,15 @@ test_generator = test_data_gen.flow_from_directory(
     class_mode='categorical'  # Sınıf modu, çok sınıflı bir sınıflandırma olduğu için 'categorical'
 )
 
+val_generator = val_data_gen.flow_from_directory(
+    val_path,
+    target_size=(224,224),  # Görüntü boyutları
+    batch_size=16,
+    class_mode='categorical'  # Sınıf modu, çok sınıflı bir sınıflandırma olduğu için 'categorical'
+)
+
 checkpoint = ModelCheckpoint(
-    f'/content/drive/MyDrive/muhendislik-tasarimi/AlexNet/AlexNet-model.h5',
+    f'/content/drive/MyDrive/muhendislik-tasarimi/AlexNet/AlexNet-model_4.h5',
      monitor='val_accuracy',
      verbose=1,
      save_best_only=True,
@@ -63,12 +77,11 @@ earlystop = EarlyStopping(monitor='val_accuracy',
                           verbose=1,
                           mode = 'max')
 
-
-# Modeli derleme
-model.compile(optimizer='Adadelta', loss='categorical_crossentropy', metrics=['accuracy'])
+model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy'])
+#Adam, Adadelta'ya göre daha iyi bir accuracy ve loss verdi.
 
 # Modeli eğitme
-results = model.fit(train_generator, epochs=10, verbose=1, callbacks=[checkpoint,earlystop])
+results = model.fit(train_generator, epochs=15, verbose=1, callbacks=[checkpoint,earlystop], validation_data= val_generator)
 
 import matplotlib.pyplot as plt
 train_loss = results.history['loss']
@@ -93,25 +106,23 @@ print(f"Test Accuracy: {test_accuracy}")
 #model ile tahmin (test verileriyle)
 predictions = model.predict(test_generator)
 
-# test verileri ve tahmin edilen değerler arasındaki karşılaştırma
 num_samples_to_visualize = 10
-test_labels = []  # Gerçek değerleri tutan boş liste
-predicted_labels = []  # Tahmin edilen değerleri tutan boş liste
+test_labels = []
+predicted_labels = []
 
-# Test verilerinden örnekleri al
 for i, (_, labels) in enumerate(test_generator):
-    test_labels.extend(labels.argmax(axis=1))  # Gerçek etiketleri al
-    predicted_labels.extend(predictions.argmax(axis=1))  # Tahmin edilen etiketleri al
+    test_labels.extend(labels.argmax(axis=1))  # Gerçek etiketler
+    predicted_labels.extend(predictions.argmax(axis=1))  # Tahmin edilen etiketler
     if i == num_samples_to_visualize - 1:
         break
 
-# Sonuçları görselleştir
 plt.figure(figsize=(12, 8))
 for i in range(num_samples_to_visualize):
     plt.subplot(5, 2, i + 1)
-    plt.imshow(test_generator[i][0][0])  # Test resmini göster
+    plt.imshow(test_generator[i][0][0])
     plt.title(f'Real: {test_labels[i]}, Predicted: {predicted_labels[i]}')
     plt.axis('off')
 
 plt.tight_layout()
 plt.show()
+
